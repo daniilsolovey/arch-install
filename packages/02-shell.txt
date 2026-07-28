@@ -1,0 +1,23 @@
+# Командная оболочка и терминал
+zsh
+bash-completion
+tmux
+
+# Редакторы
+vim
+nano
+
+# Современные консольные утилиты
+bat
+fd
+ripgrep
+fzf
+zoxide
+htop
+gdu
+tree
+rsync
+zip
+unzip
+less
+file

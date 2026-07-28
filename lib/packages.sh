@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+read_package_files() {
+  local file
+  for file in "$PROJECT_DIR"/packages/0[1-9]-*.txt; do
+    [[ -f "$file" ]] || continue
+    sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d' "$file"
+  done | awk '!seen[$0]++'
+}
+
+configure_mirrors() {
+  local mirrorlist=/etc/pacman.d/mirrorlist
+  local backup=/etc/pacman.d/mirrorlist.arch-secure-backup
+
+  log "Preparing Arch Linux package mirrors"
+  cp -a "$mirrorlist" "$backup"
+
+  if ! command -v reflector >/dev/null 2>&1; then
+    log "Installing reflector in the live environment"
+    if ! pacman -Sy --needed --noconfirm reflector; then
+      warn "Could not install reflector. Keeping the mirrorlist supplied by the Arch ISO."
+      cp -a "$backup" "$mirrorlist"
+      pacman -Sy --noconfirm
+      return 0
+    fi
+  fi
+
+  if reflector \
+      --country "$MIRROR_COUNTRIES" \
+      --protocol https \
+      --age "$MIRROR_AGE_HOURS" \
+      --latest "$MIRROR_LATEST" \
+      --sort rate \
+      --save "$mirrorlist"; then
+    log "Mirrorlist generated for: $MIRROR_COUNTRIES"
+  else
+    warn "Reflector failed. Restoring the mirrorlist supplied by the Arch ISO."
+    cp -a "$backup" "$mirrorlist"
+  fi
+
+  pacman -Syy --noconfirm
+}
+
+validate_official_packages() {
+  mapfile -t OFFICIAL_PACKAGES < <(read_package_files)
+  ((${#OFFICIAL_PACKAGES[@]} > 0)) || die "Official package list is empty."
+
+  log "Validating official package names"
+
+  local package
+  local missing=()
+  for package in "${OFFICIAL_PACKAGES[@]}"; do
+    pacman -Si "$package" >/dev/null 2>&1 || missing+=("$package")
+  done
+
+  ((${#missing[@]} == 0)) || die "Unknown official package(s): ${missing[*]}"
+}
+
+install_official_packages() {
+  mapfile -t OFFICIAL_PACKAGES < <(read_package_files)
+  ((${#OFFICIAL_PACKAGES[@]} > 0)) || die "Official package list is empty."
+
+  log "Installing ${#OFFICIAL_PACKAGES[@]} official packages"
+  pacstrap -K /mnt "${OFFICIAL_PACKAGES[@]}"
+
+  # Preserve the tested mirrorlist in the newly installed system.
+  install -Dm644 /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
+}

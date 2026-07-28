@@ -1,0 +1,215 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+PROJECT_DIR=/root/arch-secure
+source "$PROJECT_DIR/config.sh"
+source "$PROJECT_DIR/lib/common.sh"
+source "$PROJECT_DIR/install.env"
+source "$PROJECT_DIR/lib/dotfiles.sh"
+source "$PROJECT_DIR/lib/projects.sh"
+
+configure_locale_time() {
+  log "Configuring timezone and clock"
+  ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
+  hwclock --systohc
+
+  log "Configuring locale"
+  sed -i "s/^#${LOCALE} UTF-8/${LOCALE} UTF-8/" /etc/locale.gen
+  grep -q "^${LOCALE} UTF-8" /etc/locale.gen || printf '%s UTF-8\n' "$LOCALE" >> /etc/locale.gen
+  locale-gen
+  printf 'LANG=%s\n' "$LOCALE" > /etc/locale.conf
+  printf 'KEYMAP=%s\n' "$KEYMAP" > /etc/vconsole.conf
+}
+
+configure_identity() {
+  printf '%s\n' "$HOSTNAME" > /etc/hostname
+  cat > /etc/hosts <<EOF_HOSTS
+127.0.0.1 localhost
+::1       localhost
+127.0.1.1 $HOSTNAME.localdomain $HOSTNAME
+EOF_HOSTS
+}
+
+configure_user() {
+  if ! id "$USERNAME" >/dev/null 2>&1; then
+    local requested_groups=(wheel audio video input storage docker vboxusers)
+    local supplementary_groups=()
+    local group
+    for group in "${requested_groups[@]}"; do
+      getent group "$group" >/dev/null 2>&1 && supplementary_groups+=("$group")
+    done
+
+    local group_args=()
+    if ((${#supplementary_groups[@]} > 0)); then
+      group_args=(-G "$(IFS=,; echo "${supplementary_groups[*]}")")
+    fi
+    useradd -m "${group_args[@]}" -s /bin/zsh "$USERNAME"
+  fi
+
+  log "Set password for user '$USERNAME'"
+  passwd "$USERNAME"
+  passwd -l root
+
+  cat > /etc/sudoers.d/10-wheel <<'EOF_SUDO'
+%wheel ALL=(ALL:ALL) ALL
+EOF_SUDO
+  chmod 0440 /etc/sudoers.d/10-wheel
+  visudo -cf /etc/sudoers.d/10-wheel >/dev/null
+}
+
+configure_encrypted_boot() {
+  log "Configuring mkinitcpio for LUKS2 and UKI"
+  sed -i -E 's/^HOOKS=.*/HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
+
+  mkdir -p /efi/EFI/Linux
+  cat > /etc/kernel/cmdline <<EOF_CMDLINE
+rd.luks.name=${LUKS_UUID}=${CRYPT_NAME} root=/dev/mapper/${CRYPT_NAME} rootflags=subvol=@ rw
+EOF_CMDLINE
+
+  cat > /etc/mkinitcpio.d/linux.preset <<'EOF_PRESET'
+ALL_config="/etc/mkinitcpio.conf"
+ALL_kver="/boot/vmlinuz-linux"
+PRESETS=('default' 'fallback')
+default_uki="/efi/EFI/Linux/arch-linux.efi"
+default_options="--splash /usr/share/systemd/bootctl/splash-arch.bmp"
+fallback_uki="/efi/EFI/Linux/arch-linux-fallback.efi"
+fallback_options="-S autodetect"
+EOF_PRESET
+
+  bootctl --esp-path=/efi install
+  cat > /efi/loader/loader.conf <<'EOF_LOADER'
+default @saved
+timeout 3
+console-mode max
+editor no
+EOF_LOADER
+
+  mkinitcpio -P
+  [[ -f /efi/EFI/Linux/arch-linux.efi ]] || die "UKI was not generated."
+}
+
+configure_services() {
+  systemctl enable NetworkManager.service
+  systemctl enable sshd.service
+  systemctl enable fstrim.timer
+  systemctl enable docker.service
+}
+
+configure_startx() {
+  # Ensure commands referenced by i3 are available, then start X on tty1.
+  cat >> "/home/$USERNAME/.zprofile" <<'EOF_ZPROFILE'
+
+export PATH="$HOME/bin:$HOME/go/bin:$HOME/.local/bin:$PATH"
+
+if [[ -z ${DISPLAY:-} && ${XDG_VTNR:-0} -eq 1 ]]; then
+  exec startx
+fi
+EOF_ZPROFILE
+  chown "$USERNAME:$USERNAME" "/home/$USERNAME/.zprofile"
+}
+
+configure_shift_shift_sudo() {
+  local binary=/usr/local/lib/arch-secure/shift-shift
+  local sudoers=/etc/sudoers.d/30-arch-secure-shift-shift
+  [[ -x "$binary" ]] || die "Root-owned shift-shift binary is missing: $binary"
+  chown root:root "$binary"
+  chmod 0755 "$binary"
+  printf '%s ALL=(root) NOPASSWD: %s\n' "$USERNAME" "$binary" > "$sudoers"
+  chmod 0440 "$sudoers"
+  visudo -cf "$sudoers" >/dev/null
+
+  # Keep i3/config unchanged. Only sanitize commands in .xinitrc that would
+  # otherwise block startx or ask for a password in the background.
+  local xinitrc="/home/$USERNAME/.xinitrc"
+  [[ -f "$xinitrc" ]] || die ".xinitrc is missing after dotfiles installation"
+  sed -i \
+    -e '/^[[:space:]]*sudo[[:space:]]\+systemctl[[:space:]]\+import-environment[[:space:]]\+DISPLAY/d' \
+    -e '/^[[:space:]]*sudo[[:space:]]\+ntpdate[[:space:]]\+pool\.ntp\.org/d' \
+    -e "s#sudo[[:space:]]\+shift-shift#sudo $binary#g" \
+    "$xinitrc"
+  chown "$USERNAME:$USERNAME" "$xinitrc"
+  chmod 0755 "$xinitrc"
+}
+
+reload_udev_rules() {
+  [[ -f /etc/udev/rules.d/88-xkbd.rules ]] || die "udev rule was not installed"
+  chown root:root /etc/udev/rules.d/88-xkbd.rules
+  chmod 0644 /etc/udev/rules.d/88-xkbd.rules
+  udevadm control --reload-rules \
+    || warn "udevadm reload is unavailable inside chroot; rules will load after reboot."
+  udevadm trigger \
+    || warn "udevadm trigger is unavailable inside chroot; rules will load after reboot."
+}
+
+install_aur_packages() {
+  [[ "$INSTALL_AUR" == yes ]] || return 0
+
+  local aur_file="$PROJECT_DIR/packages/10-aur.txt"
+  local aur_sudoers=/etc/sudoers.d/20-arch-secure-aur
+  local build_dir="/tmp/yay-build"
+  local -a aur_packages=()
+
+  mapfile -t aur_packages < <(sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d' "$aur_file" | grep -v '^yay$' || true)
+
+  printf '%s ALL=(root) NOPASSWD: /usr/bin/pacman\n' "$USERNAME" > "$aur_sudoers"
+  chmod 0440 "$aur_sudoers"
+  visudo -cf "$aur_sudoers" >/dev/null
+
+  local status=0
+  log "Bootstrapping yay"
+  rm -rf "$build_dir"
+  if ! sudo -H -u "$USERNAME" git clone --depth 1 https://aur.archlinux.org/yay.git "$build_dir"; then
+    warn "Could not clone yay; skipping all AUR packages."
+    status=1
+  else
+    chown -R "$USERNAME:$USERNAME" "$build_dir"
+    if ! sudo -H -u "$USERNAME" bash -lc "cd '$build_dir' && makepkg -si --noconfirm --needed"; then
+      warn "Could not build yay; skipping all AUR packages."
+      status=1
+    fi
+  fi
+
+  if ((status == 0)); then
+    local package
+    for package in "${aur_packages[@]}"; do
+      log "Installing optional AUR package: $package"
+      if ! sudo -H -u "$USERNAME" yay -S --needed --noconfirm --answerclean None --answerdiff None "$package"; then
+        warn "Optional AUR package failed and was skipped: $package"
+        status=1
+      fi
+    done
+  fi
+
+  rm -f "$aur_sudoers"
+  return "$status"
+}
+
+main() {
+  configure_locale_time
+  configure_identity
+  configure_user
+  configure_encrypted_boot
+  configure_services
+
+  export USERNAME USER_HOME="/home/$USERNAME"
+  install_dotfiles "$PROJECT_DIR/dotfiles.map"
+  configure_shift_shift_sudo
+  reload_udev_rules
+
+  if ! install_user_projects; then
+    warn "One or more optional Go projects failed. The base system remains installed."
+  fi
+
+  chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
+  configure_startx
+
+  if ! install_aur_packages; then
+    warn "One or more optional AUR packages failed. The base system remains installed."
+  fi
+
+  rm -f "$PROJECT_DIR/install.env"
+  log "Chroot configuration completed"
+}
+
+main "$@"

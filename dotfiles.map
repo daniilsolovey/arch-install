@@ -1,0 +1,52 @@
+# TYPE|SOURCE_RELATIVE_TO_REPOSITORY|DESTINATION
+# DESTINATION supports ${USER_HOME} and ${USERNAME}.
+
+# Executables from the repository's BINs directory
+file|BINs/favor|${USER_HOME}/bin/favor
+file|BINs/keynav|${USER_HOME}/bin/keynav
+file|BINs/tmux-autocomplete|${USER_HOME}/bin/tmux-autocomplete
+file|BINs/shift-shift|${USER_HOME}/bin/shift-shift
+file|BINs/sensors-info-linux|${USER_HOME}/bin/sensors-info-linux
+file|BINs/xkb-udev|${USER_HOME}/bin/xkb-udev
+
+# Root-owned copy used by sudo from .xinitrc. Never grant passwordless root
+# access to the user-owned copy in ~/bin.
+file|BINs/shift-shift|/usr/local/lib/arch-secure/shift-shift
+
+# Screen layouts
+dir|.screenlayout|${USER_HOME}/.screenlayout
+
+# favor data/configuration as explicitly requested
+dir|.config/favor|${USER_HOME}/go/bin/favor
+
+# XKB configuration
+# Prebuilt xkbcomp from dotfiles is installed as a root-owned system binary.
+system|usr/xkbcomp|/usr/bin/xkbcomp
+dir|xkb|${USER_HOME}/.xkb
+config|.xkbrc|${USER_HOME}/.xkbrc
+
+# Files copied directly to home
+file|.xinitrc|${USER_HOME}/.xinitrc
+config|.xbindkeysrc|${USER_HOME}/.xbindkeysrc
+config|.Xresources|${USER_HOME}/.Xresources
+config|.bash_profile|${USER_HOME}/.bash_profile
+config|.bashrc|${USER_HOME}/.bashrc
+config|.zshrc|${USER_HOME}/.zshrc
+config|.keynavrc|${USER_HOME}/.keynavrc
+config|.tmux.conf|${USER_HOME}/.tmux.conf
+
+# System udev rule
+config|88-xkbd.rules|/etc/udev/rules.d/88-xkbd.rules
+
+# tmux-autocomplete themes
+dir|usr/tmux-autocomplete/themes|/usr/share/tmux-autocomplete/themes
+
+# i3 configuration is copied unchanged
+config|.config/i3/config|${USER_HOME}/.config/i3/config
+
+# All user scripts
+dir|scripts|${USER_HOME}/Scripts
+
+# Commands referenced by name in i3 must be in PATH
+file|scripts/translator.sh|${USER_HOME}/bin/translator
+file|scripts/keyboard_setup.sh|${USER_HOME}/bin/keyboard_setup.sh

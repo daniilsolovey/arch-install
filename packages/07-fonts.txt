@@ -1,0 +1,9 @@
+# Основные шрифты
+ttf-dejavu
+ttf-hack
+ttf-liberation
+ttf-roboto
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+ttf-ubuntu-font-family

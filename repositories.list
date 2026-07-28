@@ -1,0 +1,5 @@
+# Repository|installation action
+volume-control-go|clone executables and create ~/Scripts/volume_control.sh
+sensors-info-linux|clone and build ~/go/bin/sensors-info-linux
+cpu-monitoring|clone and build ~/go/bin/cpu-monitoring
+low-battery-notify|clone and build ~/go/bin/low-battery-notify

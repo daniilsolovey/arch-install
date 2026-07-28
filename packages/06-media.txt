@@ -1,0 +1,15 @@
+# PipeWire audio stack
+pipewire
+pipewire-audio
+pipewire-pulse
+wireplumber
+pavucontrol
+
+# Video and audio tools
+mpv
+ffmpeg
+
+# Screenshots
+flameshot
+maim
+slop

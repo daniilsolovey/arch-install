@@ -1,0 +1,11 @@
+# Браузеры и NetworkManager tray
+firefox
+chromium
+network-manager-applet
+
+# VPN-плагины NetworkManager
+networkmanager-openvpn
+networkmanager-openconnect
+networkmanager-strongswan
+networkmanager-pptp
+network-manager-sstp

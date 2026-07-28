@@ -1,0 +1,18 @@
+# Диагностика оборудования
+usbutils
+pciutils
+smartmontools
+nvme-cli
+lm_sensors
+lshw
+hwinfo
+
+# Сетевые инструменты
+tcpdump
+traceroute
+bind
+ethtool
+inetutils
+
+# Battery information and notifications
+upower

@@ -1,0 +1,29 @@
+# Xorg
+xorg-server
+xorg-xinit
+xorg-xrandr
+xorg-xset
+xorg-xbacklight
+xclip
+xdotool
+xbindkeys
+
+# Terminal required by i3: urxvt -e tmux
+rxvt-unicode
+
+# Window manager and launchers
+i3-wm
+rofi
+dmenu
+
+# Monitor configuration
+arandr
+autorandr
+
+# Compositor, notifications and wallpaper
+picom
+dunst
+libnotify
+feh
+
+# LightDM is intentionally omitted: TTY login + startx.

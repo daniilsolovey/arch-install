@@ -1,0 +1,25 @@
+# Базовая система
+base
+base-devel
+linux
+linux-headers
+linux-firmware
+intel-ucode
+
+# Загрузка, шифрование и файловые системы
+cryptsetup
+btrfs-progs
+dosfstools
+efibootmgr
+mkinitcpio
+
+# Сеть и администрирование
+networkmanager
+sudo
+openssh
+
+# Pacman и Git
+pacman-contrib
+reflector
+git
+ca-certificates

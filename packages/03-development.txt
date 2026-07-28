@@ -1,0 +1,22 @@
+# Go-разработка
+go
+
+# Контейнеры
+docker
+docker-buildx
+docker-compose
+
+# Kubernetes
+kubectl
+helm
+
+# JavaScript / TypeScript
+nodejs
+npm
+typescript
+
+# Python и обработка данных
+python
+python-pip
+jq
+yq

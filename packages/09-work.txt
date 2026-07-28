@@ -1,0 +1,9 @@
+# Рабочие приложения
+telegram-desktop
+remmina
+ksnip
+
+# VirtualBox host for the standard Arch kernel `linux`
+virtualbox
+virtualbox-host-modules-arch
+virtualbox-guest-iso
