@@ -31,7 +31,13 @@ collect_install_settings() {
 write_fstab() {
   log "Generating fstab"
   genfstab -U /mnt > /mnt/etc/fstab
-  grep -q ' / ' /mnt/etc/fstab || die "Root filesystem is missing from generated fstab."
+
+  awk '$1 !~ /^#/ && $2 == "/" { found=1 } END { exit !found }' /mnt/etc/fstab \
+    || die "Root filesystem is missing from generated fstab."
+  awk '$1 !~ /^#/ && $2 == "/efi" { found=1 } END { exit !found }' /mnt/etc/fstab \
+    || die "EFI filesystem is missing from generated fstab."
+
+  log "fstab validated"
 }
 
 prepare_chroot_payload() {

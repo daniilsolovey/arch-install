@@ -3,7 +3,7 @@ telegram-desktop
 remmina
 ksnip
 
-# VirtualBox host for the standard Arch kernel `linux`
+# VirtualBox host modules are built with DKMS for the installed kernel
 virtualbox
-virtualbox-host-modules-arch
+virtualbox-host-dkms
 virtualbox-guest-iso

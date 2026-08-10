@@ -17,3 +17,8 @@
 - Virtualization: VirtualBox host using modules matched to the standard Arch `linux` kernel.
 - AUR: `yay` bootstrap followed by `cursor-bin` and the configured optional work applications.
 - User groups: `wheel`, `audio`, `video`, `input`, `storage`, `docker`, and `vboxusers` when available.
+
+
+## Reliability changes from the first hardware run
+
+The destructive phase is preceded by package, script/function, shell-syntax and dotfiles preflight checks. `fstab` is validated by parsed mountpoint fields rather than literal spacing. A resume path exists for failures after `pacstrap`, and it never repartitions or reformats the target disk. VirtualBox uses `virtualbox-host-dkms`, matching the current Arch package dependency model. Reflector checks a small bounded mirror set to avoid multi-minute startup delays.

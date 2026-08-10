@@ -14,7 +14,7 @@ KEYMAP_DEFAULT="us"
 # restores the Arch ISO mirrorlist and continues with it.
 MIRROR_COUNTRIES="Kazakhstan,Russia,Germany"
 MIRROR_AGE_HOURS="24"
-MIRROR_LATEST="30"
+MIRROR_LATEST="8"
 
 DOTFILES_REPO="https://github.com/daniilsolovey/dotfiles"
 DOTFILES_BRANCH="master"

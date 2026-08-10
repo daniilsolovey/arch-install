@@ -1,6 +1,6 @@
-# arch-secure v1.4
+# arch-install v1.5
 
-Destructive Arch Linux workstation installer for UEFI systems.
+Automated Arch Linux workstation installer for UEFI systems.
 
 ## Defaults
 
@@ -51,23 +51,26 @@ Official packages, dotfiles and the listed Go repositories are installed automat
 
 ## Included applications
 
-The package lists include Firefox, Chromium and VirtualBox for the standard Arch `linux` kernel. The user is added to `docker` and `vboxusers` when those groups exist.
+The package lists include Firefox, Chromium and VirtualBox. VirtualBox uses the current official `virtualbox-host-dkms` package, with `linux-headers` already installed. The user is added to `docker` and `vboxusers` when those groups exist.
 
 ## Important
 
 Review `config.sh`, `packages/`, `dotfiles.map`, and `repositories.list` before running on real hardware. A syntax check cannot fully reproduce firmware, disk, network, GitHub or AUR behavior, so the safest first run is in a UEFI virtual machine or on a spare disk.
 
-## v1.4 final changes
+## v1.5 changes after first real-hardware installation test
 
-- `.zshrc` is installed into the selected user's home directory.
-- `translator.sh` is installed as `~/bin/translator`.
-- `.xinitrc` is executable; blocking/background sudo calls are sanitized without changing `i3/config`.
-- `shift-shift` uses a root-owned executable and a narrow sudoers rule.
-- `88-xkbd.rules` is installed under `/etc/udev/rules.d/`.
-- Supplementary groups are added only when they exist.
-- Go repositories and AUR packages are optional and cannot invalidate the base installation.
-- The chroot environment file is shell-escaped and mode `0600`.
-- Xorg package selection remains unchanged.
-- `usr/xkbcomp` from dotfiles is validated and installed root-owned as `/usr/bin/xkbcomp`.
-- `ttf-ubuntu-font-family` is installed for the Ubuntu Mono font used by i3.
-- Every dotfiles source and destination is validated before any dotfile is copied.
+* `fstab` validation now parses fields with `awk`, so tabs produced by `genfstab` are handled correctly. Both `/` and `/efi` are verified.
+* `virtualbox-host-modules-arch` was replaced by the current official `virtualbox-host-dkms` package.
+* Reflector rates at most 8 recent mirrors instead of 30, reducing installation startup time.
+* A strict preflight validates installer files, required Bash functions and shell syntax before disk erase.
+* The dotfiles repository and every source in `dotfiles.map` are checked before disk erase.
+* `./install.sh --resume` can continue an interrupted installation after `pacstrap` without repartitioning or reformatting the disk. It reopens LUKS, mounts the existing Btrfs layout, regenerates/validates `fstab`, then continues with the chroot stage.
+* Destructive confirmation remains mandatory for a fresh installation; resume mode never calls the partitioning or formatting functions.
+
+## Resume after a late-stage failure
+
+If a fresh installation has already completed partitioning, LUKS, Btrfs and `pacstrap`, do **not** run a fresh installation again. Reboot the Arch ISO if necessary, reconnect to the network, clone this repository, and run:
+
+    ./install.sh --resume
+
+Choose the same hostname/user/timezone and the existing target disk. The installer will ask for the existing LUKS passphrase, mount the existing layout and continue from the post-`pacstrap` configuration stage.
