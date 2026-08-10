@@ -9,7 +9,6 @@ validate_disk() {
 
   [[ -b "$disk" ]] || die "$disk is not a block device."
   [[ "$(lsblk -dn -o TYPE "$disk")" == "disk" ]] || die "$disk is not a whole disk."
-
   local live_source
   live_source=$(findmnt -n -o SOURCE /run/archiso/bootmnt 2>/dev/null || true)
   if [[ -n "$live_source" ]]; then
@@ -25,14 +24,12 @@ choose_disk() {
   printf '\n'
   read -r -p "Target disk (example /dev/nvme0n1): " DISK
   validate_disk "$DISK"
-
   log "Selected disk"
   lsblk -o NAME,SIZE,MODEL,FSTYPE,MOUNTPOINTS "$DISK"
 
   warn "ALL data, partitions and files on $DISK will be destroyed."
   read -r -p "Type exactly: ERASE $DISK: " confirmation
   [[ "$confirmation" == "ERASE $DISK" ]] || die "Confirmation did not match. Nothing was erased."
-
   local serial
   serial=$(udevadm info --query=property --name="$DISK" 2>/dev/null | sed -n 's/^ID_SERIAL_SHORT=//p' | head -n1)
   printf 'Disk serial: %s\n' "${serial:-unknown}"
@@ -49,13 +46,39 @@ partition_path() {
   fi
 }
 
+unmount_disk_filesystems() {
+  local disk=$1
+  local node
+  local target
+
+  log "Unmounting existing filesystems on $disk"
+
+  # Previous installer runs mount the whole target tree below /mnt.
+  # Recursive unmount is reliable for Btrfs subvolumes and avoids parsing
+  # lsblk's MOUNTPOINTS field, which may contain escaped \x0a separators.
+  if mountpoint -q /mnt; then
+    umount -R /mnt
+  fi
+
+  # Also unmount anything from this disk that may have been mounted elsewhere.
+  while IFS= read -r node; do
+    while IFS= read -r target; do
+      [[ -n "$target" ]] || continue
+      umount "$target"
+    done < <(findmnt -rn -S "$node" -o TARGET 2>/dev/null | sort -r || true)
+  done < <(lsblk -nrpo NAME "$disk")
+
+  # A previous failed run may have left our LUKS mapper open.
+  # Close it only after its filesystems have been unmounted.
+  if cryptsetup status "$CRYPT_NAME" >/dev/null 2>&1; then
+    cryptsetup close "$CRYPT_NAME"
+  fi
+}
+
 partition_disk() {
   local disk=$1
 
-  log "Unmounting existing filesystems on $disk"
-  while read -r mountpoint; do
-    [[ -n "$mountpoint" ]] && umount -R "$mountpoint"
-  done < <(lsblk -nr -o MOUNTPOINTS "$disk" | awk 'NF' | sort -r)
+  unmount_disk_filesystems "$disk"
 
   log "Creating GPT with a ${EFI_SIZE} EFI partition"
   wipefs --all --force "$disk"
@@ -72,7 +95,6 @@ partition_disk() {
   LUKS_PART=$(partition_path "$disk" 2)
 
   [[ -b "$EFI_PART" && -b "$LUKS_PART" ]] || die "New partitions did not appear."
-
   log "Created partitions"
   lsblk -o NAME,SIZE,PARTTYPE,PARTLABEL "$disk"
 }

@@ -13,27 +13,17 @@ collect_install_settings() {
   TIMEZONE=${TIMEZONE:-$TIMEZONE_DEFAULT}
   [[ -e "/usr/share/zoneinfo/$TIMEZONE" ]] || die "Unknown timezone: $TIMEZONE"
 
-  local aur_prompt aur_default
-  case "$INSTALL_AUR_DEFAULT" in
-    yes) aur_prompt="Y/n"; aur_default="yes" ;;
-    *)   aur_prompt="y/N"; aur_default="no" ;;
-  esac
-
-  read -r -p "Install AUR packages (including cursor-bin)? [$aur_prompt]: " aur_answer
-  case ${aur_answer:-$aur_default} in
-    y|Y|yes|YES) INSTALL_AUR=yes ;;
-    *) INSTALL_AUR=no ;;
-  esac
-
-  export HOSTNAME USERNAME TIMEZONE INSTALL_AUR
+  export HOSTNAME USERNAME TIMEZONE
 }
 
 write_fstab() {
   log "Generating fstab"
+
   genfstab -U /mnt > /mnt/etc/fstab
 
   awk '$1 !~ /^#/ && $2 == "/" { found=1 } END { exit !found }' /mnt/etc/fstab \
     || die "Root filesystem is missing from generated fstab."
+
   awk '$1 !~ /^#/ && $2 == "/efi" { found=1 } END { exit !found }' /mnt/etc/fstab \
     || die "EFI filesystem is missing from generated fstab."
 
@@ -57,8 +47,8 @@ prepare_chroot_payload() {
     printf 'KEYMAP=%q\n' "$KEYMAP_DEFAULT"
     printf 'CRYPT_NAME=%q\n' "$CRYPT_NAME"
     printf 'LUKS_UUID=%q\n' "$luks_uuid"
-    printf 'INSTALL_AUR=%q\n' "$INSTALL_AUR"
   } > /mnt/root/arch-secure/install.env
+
   chmod 0600 /mnt/root/arch-secure/install.env
 }
 

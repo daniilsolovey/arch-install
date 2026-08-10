@@ -1,6 +1,0 @@
-# AUR-пакеты. yay устанавливается первым как helper.
-yay
-cursor-bin
-claude-code
-zoom
-teams-for-linux

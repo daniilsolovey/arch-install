@@ -14,7 +14,7 @@ KEYMAP_DEFAULT="us"
 # restores the Arch ISO mirrorlist and continues with it.
 MIRROR_COUNTRIES="Kazakhstan,Russia,Germany"
 MIRROR_AGE_HOURS="24"
-MIRROR_LATEST="8"
+MIRROR_LATEST="30"
 
 DOTFILES_REPO="https://github.com/daniilsolovey/dotfiles"
 DOTFILES_BRANCH="master"
@@ -27,5 +27,3 @@ GO_REPOSITORIES=(
   cpu-monitoring
   low-battery-notify
 )
-
-INSTALL_AUR_DEFAULT="no"
