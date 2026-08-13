@@ -30,3 +30,6 @@ power-profiles-daemon
 
 # cpu temp, freq
 psensor
+
+# lock screen by password
+slock
