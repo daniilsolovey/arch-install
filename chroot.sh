@@ -171,6 +171,8 @@ main() {
   export USERNAME USER_HOME="/home/$USERNAME"
 
   install_dotfiles "$PROJECT_DIR/dotfiles.map"
+  find "$USER_HOME/Scripts" -type f -exec chmod 0755 {} +
+
   configure_shift_shift_sudo
   reload_udev_rules
 
