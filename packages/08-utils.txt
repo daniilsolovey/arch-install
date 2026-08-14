@@ -6,6 +6,7 @@ nvme-cli
 lm_sensors
 lshw
 hwinfo
+btop
 
 # Сетевые инструменты
 tcpdump
