@@ -34,3 +34,8 @@ psensor
 
 # lock screen by password
 slock
+
+# bluetooth
+bluez
+bluez-utils
+blueman
