@@ -4,6 +4,7 @@ xorg-xinit
 xorg-xrandr
 xorg-xset
 xorg-xbacklight
+xorg-xinput
 xclip
 xdotool
 xbindkeys

@@ -6,6 +6,7 @@ nvme-cli
 lm_sensors
 lshw
 hwinfo
+btop
 
 # Сетевые инструменты
 tcpdump
@@ -30,3 +31,11 @@ power-profiles-daemon
 
 # cpu temp, freq
 psensor
+
+# lock screen by password
+slock
+
+# bluetooth
+bluez
+bluez-utils
+blueman

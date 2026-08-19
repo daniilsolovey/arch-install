@@ -105,18 +105,6 @@ configure_services() {
   systemctl enable docker.service
 }
 
-configure_startx() {
-  cat >> "/home/$USERNAME/.zprofile" <<'EOF_ZPROFILE'
-
-export PATH="$HOME/bin:$HOME/go/bin:$HOME/.local/bin:$PATH"
-if [[ -z ${DISPLAY:-} && ${XDG_VTNR:-0} -eq 1 ]]; then
-  exec startx
-fi
-EOF_ZPROFILE
-
-  chown "$USERNAME:$USERNAME" "/home/$USERNAME/.zprofile"
-}
-
 configure_shift_shift_sudo() {
   local binary=/usr/local/lib/arch-secure/shift-shift
   local sudoers=/etc/sudoers.d/30-arch-secure-shift-shift
@@ -134,9 +122,9 @@ configure_shift_shift_sudo() {
   [[ -f "$xinitrc" ]] || die ".xinitrc is missing after dotfiles installation"
 
   sed -i \
-    -e '/^[[:space:]]*sudo[[:space:]]\+systemctl[[:space:]]\+import-environment[[:space:]]\+DISPLAY/d' \
-    -e '/^[[:space:]]*sudo[[:space:]]\+ntpdate[[:space:]]\+pool\.ntp\.org/d' \
-    -e "s#sudo[[:space:]]\+shift-shift#sudo $binary#g" \
+    -e '/^[[:space:]]*sudo[[:space:]]+systemctl[[:space:]]+import-environment[[:space:]]+DISPLAY/d' \
+    -e '/^[[:space:]]*sudo[[:space:]]+ntpdate[[:space:]]+pool.ntp.org/d' \
+    -e "s#sudo[[:space:]]+shift-shift#sudo $binary#g" \
     "$xinitrc"
 
   chown "$USERNAME:$USERNAME" "$xinitrc"
@@ -156,6 +144,23 @@ reload_udev_rules() {
     || warn "udevadm trigger is unavailable inside chroot; rules will load after reboot."
 }
 
+configure_tty_autologin() {
+  local override_dir="/etc/systemd/system/getty@tty1.service.d"
+  local override_file="$override_dir/override.conf"
+
+  log "Configuring tty1 autologin for $USERNAME"
+
+  mkdir -p "$override_dir"
+
+  cat > "$override_file" <<EOF
+[Service]
+ExecStart=
+ExecStart=-/usr/bin/agetty --autologin $USERNAME --noclear %I \$TERM
+EOF
+
+  [[ -f "$override_file" ]] || die "Failed to configure tty1 autologin"
+}
+
 main() {
   configure_locale_time
   configure_identity
@@ -166,6 +171,8 @@ main() {
   export USERNAME USER_HOME="/home/$USERNAME"
 
   install_dotfiles "$PROJECT_DIR/dotfiles.map"
+  find "$USER_HOME/Scripts" -type f -exec chmod 0755 {} +
+
   configure_shift_shift_sudo
   reload_udev_rules
 
@@ -174,7 +181,7 @@ main() {
   fi
 
   chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
-  configure_startx
+  configure_tty_autologin
 
   rm -f "$PROJECT_DIR/install.env"
   log "Chroot configuration completed"

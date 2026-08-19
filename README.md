@@ -21,8 +21,18 @@ All interactive defaults can be changed in `config.sh`.
 - Btrfs label `ArchRoot`
 - Btrfs subvolumes: `@`, `@home`, `@snapshots`, `@var_log`, `@pkg`
 - systemd-boot with Unified Kernel Images
-- TTY login and automatic `startx` on tty1; no LightDM
+- automatic login of the normal user on `tty1`
+- X is started manually with `startx`
+- no LightDM or other display manager
 - root account locked; normal user uses sudo
+
+Automatic `startx` is intentionally disabled. After boot, the configured user is automatically logged in on `tty1` and X can be started manually:
+
+```bash
+startx
+```
+
+This keeps the TTY available if an X11, i3 or user configuration prevents the graphical environment from starting correctly.
 
 ## Mirrors
 
@@ -49,6 +59,33 @@ The installer permanently erases the selected target disk. It asks for two destr
 
 Official packages, dotfiles and the listed Go repositories are installed automatically. AUR packages such as `cursor-bin` are offered interactively and default to **No**.
 
+## Dotfiles
+
+User configuration files are installed according to `dotfiles.map`.
+
+This includes configuration for:
+
+- i3
+- URxvt
+- Zsh
+- tmux
+- X11
+- dunst
+- favor
+- user scripts and utilities
+
+For example:
+
+```text
+.config/dunst/dunstrc
+→ ~/.config/dunst/dunstrc
+
+.config/favor/favor.conf
+→ ~/.config/favor/favor.conf
+```
+
+The installer creates required destination directories automatically.
+
 ## Included applications
 
 The package lists include Firefox, Chromium and VirtualBox. VirtualBox uses the current official `virtualbox-host-dkms` package, with `linux-headers` already installed. The user is added to `docker` and `vboxusers` when those groups exist.
@@ -59,18 +96,25 @@ Review `config.sh`, `packages/`, `dotfiles.map`, and `repositories.list` before 
 
 ## v1.5 changes after first real-hardware installation test
 
-* `fstab` validation now parses fields with `awk`, so tabs produced by `genfstab` are handled correctly. Both `/` and `/efi` are verified.
-* `virtualbox-host-modules-arch` was replaced by the current official `virtualbox-host-dkms` package.
-* Reflector rates at most 8 recent mirrors instead of 30, reducing installation startup time.
-* A strict preflight validates installer files, required Bash functions and shell syntax before disk erase.
-* The dotfiles repository and every source in `dotfiles.map` are checked before disk erase.
-* `./install.sh --resume` can continue an interrupted installation after `pacstrap` without repartitioning or reformatting the disk. It reopens LUKS, mounts the existing Btrfs layout, regenerates/validates `fstab`, then continues with the chroot stage.
-* Destructive confirmation remains mandatory for a fresh installation; resume mode never calls the partitioning or formatting functions.
+- `fstab` validation now parses fields with `awk`, so tabs produced by `genfstab` are handled correctly. Both `/` and `/efi` are verified.
+- `virtualbox-host-modules-arch` was replaced by the current official `virtualbox-host-dkms` package.
+- Reflector rates at most 8 recent mirrors instead of 30, reducing installation startup time.
+- A strict preflight validates installer files, required Bash functions and shell syntax before disk erase.
+- The dotfiles repository and every source in `dotfiles.map` are checked before disk erase.
+- `./install.sh --resume` can continue an interrupted installation after `pacstrap` without repartitioning or reformatting the disk. It reopens LUKS, mounts the existing Btrfs layout, regenerates/validates `fstab`, then continues with the chroot stage.
+- Destructive confirmation remains mandatory for a fresh installation; resume mode never calls the partitioning or formatting functions.
+- Automatic `startx` on `tty1` was removed. X is now started manually with `startx`.
+- The configured normal user is automatically logged in on `tty1` using a systemd `getty@tty1` override.
+- The TTY remains usable if X11 or i3 fails to start.
+- dunst configuration is installed to `~/.config/dunst/dunstrc`.
+- favor configuration is installed to `~/.config/favor/favor.conf`.
 
 ## Resume after a late-stage failure
 
 If a fresh installation has already completed partitioning, LUKS, Btrfs and `pacstrap`, do **not** run a fresh installation again. Reboot the Arch ISO if necessary, reconnect to the network, clone this repository, and run:
 
-    ./install.sh --resume
+```bash
+./install.sh --resume
+```
 
 Choose the same hostname/user/timezone and the existing target disk. The installer will ask for the existing LUKS passphrase, mount the existing layout and continue from the post-`pacstrap` configuration stage.

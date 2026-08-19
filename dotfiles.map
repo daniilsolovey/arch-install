@@ -41,8 +41,14 @@ config|88-xkbd.rules|/etc/udev/rules.d/88-xkbd.rules
 # tmux-autocomplete themes
 dir|usr/tmux-autocomplete/themes|/usr/share/tmux-autocomplete/themes
 
-# i3 configuration is copied unchanged
+# i3 configuration
 config|.config/i3/config|${USER_HOME}/.config/i3/config
+
+# dunst configuration
+config|.config/dunst/dunstrc|${USER_HOME}/.config/dunst/dunstrc
+
+# favor
+config|.config/favor/favor.conf|${USER_HOME}/.config/favor/favor.conf
 
 # All user scripts
 dir|scripts|${USER_HOME}/Scripts
