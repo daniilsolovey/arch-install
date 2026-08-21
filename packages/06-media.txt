@@ -4,6 +4,10 @@ pipewire-audio
 pipewire-pulse
 wireplumber
 pavucontrol
+pipewire-alsa
+sof-firmware
+alsa-ucm-conf
+alsa-utils
 
 # Video and audio tools
 mpv
