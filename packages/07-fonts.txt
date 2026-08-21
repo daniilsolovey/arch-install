@@ -7,3 +7,4 @@ noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 ttf-ubuntu-font-family
+gnome-themes-extra

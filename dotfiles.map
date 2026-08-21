@@ -56,3 +56,6 @@ dir|scripts|${USER_HOME}/Scripts
 # Commands referenced by name in i3 must be in PATH
 file|scripts/translator.sh|${USER_HOME}/bin/translator
 file|scripts/keyboard_setup.sh|${USER_HOME}/bin/keyboard_setup.sh
+
+# dark theme
+config|gtk-3-settings.ini|${USER_HOME}/.config/gtk-3.0/settings.ini
