@@ -18,10 +18,6 @@ inetutils
 # Battery information and notifications
 upower
 
-# sound
-sof-firmware
-alsa-ucm-conf
-alsa-utils
 
 #bright control
 brightnessctl
