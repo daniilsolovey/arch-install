@@ -35,5 +35,7 @@ slock
 bluez
 bluez-utils
 blueman
-
 wireless_tools
+
+# ui files size
+filelight
