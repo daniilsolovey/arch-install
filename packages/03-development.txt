@@ -20,3 +20,6 @@ python
 python-pip
 jq
 yq
+
+# databases
+postgresql
