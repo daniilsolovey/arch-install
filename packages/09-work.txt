@@ -7,3 +7,6 @@ ksnip
 virtualbox
 virtualbox-host-dkms
 virtualbox-guest-iso
+
+# calculator
+calc

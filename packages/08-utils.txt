@@ -18,10 +18,6 @@ inetutils
 # Battery information and notifications
 upower
 
-# sound
-sof-firmware
-alsa-ucm-conf
-alsa-utils
 
 #bright control
 brightnessctl
@@ -39,3 +35,7 @@ slock
 bluez
 bluez-utils
 blueman
+wireless_tools
+
+# ui files size
+filelight

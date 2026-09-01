@@ -1,4 +1,4 @@
-# arch-install v2.0.0
+# arch-install v2.1.0
 
 Automated Arch Linux workstation installer for UEFI systems.
 
@@ -137,6 +137,29 @@ packages/
 The workstation includes the components required for the current setup, including Xorg, i3, Zsh, URxvt, tmux, NetworkManager, Docker, SSH, PipeWire/WirePlumber, dunst, Rofi, Firefox, Chromium and VirtualBox.
 
 VirtualBox uses the DKMS host-module setup.
+
+## Packages to install manually
+
+The installer does not install `yay` or any AUR packages. After the first boot, install `yay` as the normal user:
+
+```bash
+git clone https://aur.archlinux.org/yay.git /tmp/yay
+cd /tmp/yay
+makepkg -si
+```
+
+Then install these additional packages manually:
+
+```bash
+yay -S --needed \
+  downgrade \
+  nemo \
+  obs-studio \
+  amnezia-bin \
+  amneziavpn-bin \
+  cursor-bin \
+  claude-code
+```
 
 ## Dotfiles
 
