@@ -154,6 +154,7 @@ Then install these additional packages manually:
 yay -S --needed \
   downgrade \
   nemo \
+  masterpdfeditor \
   obs-studio \
   amnezia-bin \
   amneziavpn-bin \
