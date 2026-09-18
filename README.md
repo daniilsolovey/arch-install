@@ -159,6 +159,7 @@ yay -S --needed \
   amnezia-bin \
   amneziavpn-bin \
   cursor-bin \
+  keynav \
   claude-code
 ```
 

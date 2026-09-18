@@ -3,7 +3,6 @@
 
 # Executables from the repository's BINs directory
 file|BINs/favor|${USER_HOME}/bin/favor
-file|BINs/keynav|${USER_HOME}/bin/keynav
 file|BINs/tmux-autocomplete|${USER_HOME}/bin/tmux-autocomplete
 file|BINs/shift-shift|${USER_HOME}/bin/shift-shift
 file|BINs/sensors-info-linux|${USER_HOME}/bin/sensors-info-linux
