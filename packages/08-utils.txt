@@ -45,3 +45,6 @@ keepassxc
 
 # local password for files and directories
 gocryptfs
+
+# picom прозрачность терминала
+picom

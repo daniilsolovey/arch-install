@@ -44,6 +44,9 @@ dir|usr/tmux-autocomplete/themes|/usr/share/tmux-autocomplete/themes
 # i3 configuration
 config|.config/i3/config|${USER_HOME}/.config/i3/config
 
+# picom configuration
+config|.config/picom/picom.conf|${USER_HOME}/.config/picom/picom.conf
+
 # dunst configuration
 config|.config/dunst/dunstrc|${USER_HOME}/.config/dunst/dunstrc
 
