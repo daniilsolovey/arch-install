@@ -39,3 +39,9 @@ wireless_tools
 
 # ui files size
 filelight
+
+# password manager
+keepassxc
+
+# local password for files and directories
+gocryptfs
