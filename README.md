@@ -387,6 +387,163 @@ z <name>
 
 # System management
 
+## Backup LTS kernel
+
+The workstation can keep the regular Arch kernel and the LTS kernel side by side:
+
+```text
+linux       → primary kernel
+linux-lts   → backup kernel
+```
+
+The LTS kernel is useful if a future update of the regular `linux` kernel causes a regression such as a boot, graphics, Wi-Fi or driver problem.
+
+Before changing anything, inspect the current boot setup:
+
+```bash
+uname -r
+cat /etc/mkinitcpio.d/linux.preset
+bootctl list
+cat /efi/loader/loader.conf
+df -h /efi
+```
+
+For this installer, the regular kernel preset should use UKI and look like:
+
+```bash
+ALL_config="/etc/mkinitcpio.conf"
+ALL_kver="/boot/vmlinuz-linux"
+PRESETS=('default' 'fallback')
+default_uki="/efi/EFI/Linux/arch-linux.efi"
+default_options="--splash /usr/share/systemd/bootctl/splash-arch.bmp"
+fallback_uki="/efi/EFI/Linux/arch-linux-fallback.efi"
+fallback_options="-S autodetect"
+```
+
+Install the LTS kernel and its headers:
+
+```bash
+sudo pacman -S linux-lts linux-lts-headers
+```
+
+The headers are required for external DKMS modules such as the VirtualBox host modules.
+
+Inspect the preset created by the package:
+
+```bash
+cat /etc/mkinitcpio.d/linux-lts.preset
+```
+
+Make a backup before editing it:
+
+```bash
+sudo cp /etc/mkinitcpio.d/linux-lts.preset /etc/mkinitcpio.d/linux-lts.preset.bak
+```
+
+Replace `/etc/mkinitcpio.d/linux-lts.preset` with:
+
+```bash
+ALL_config="/etc/mkinitcpio.conf"
+ALL_kver="/boot/vmlinuz-linux-lts"
+PRESETS=('default' 'fallback')
+
+default_uki="/efi/EFI/Linux/arch-linux-lts.efi"
+default_options="--splash /usr/share/systemd/bootctl/splash-arch.bmp"
+
+fallback_uki="/efi/EFI/Linux/arch-linux-lts-fallback.efi"
+fallback_options="-S autodetect"
+```
+
+Build both LTS UKIs:
+
+```bash
+sudo mkinitcpio -p linux-lts
+```
+
+A successful build should contain:
+
+```text
+Creating unified kernel image: '/efi/EFI/Linux/arch-linux-lts.efi'
+Unified kernel image generation successful
+
+Creating unified kernel image: '/efi/EFI/Linux/arch-linux-lts-fallback.efi'
+Unified kernel image generation successful
+```
+
+Warnings about firmware for hardware that is not present in the machine may appear during the fallback build. The important result is that both UKIs finish with `Unified kernel image generation successful`.
+
+Verify the boot entries:
+
+```bash
+bootctl list
+```
+
+The expected layout is:
+
+```text
+Arch Linux (...)                  ← primary kernel
+Arch Linux (...~fallback)
+Arch Linux (...-lts)              ← backup LTS kernel
+Arch Linux (...-lts~fallback)
+```
+
+The regular kernel should remain the default entry.
+
+The current loader configuration uses a three-second boot menu:
+
+```text
+default @saved
+timeout 3
+console-mode max
+editor no
+```
+
+To test the backup kernel, reboot:
+
+```bash
+reboot
+```
+
+Select the `-lts` entry in the systemd-boot menu and verify after login:
+
+```bash
+uname -r
+```
+
+The result should end in:
+
+```text
+-lts
+```
+
+After confirming that X/i3, Wi-Fi, audio and required DKMS-based software such as VirtualBox work, the LTS kernel is ready as a backup.
+
+Normal system upgrades continue to use:
+
+```bash
+sudo pacman -Syu
+```
+
+Because both `linux` and `linux-lts` are installed packages, both are upgraded when newer versions are available. The normal Arch kernel hooks then rebuild their corresponding UKIs from:
+
+```text
+/etc/mkinitcpio.d/linux.preset
+/etc/mkinitcpio.d/linux-lts.preset
+```
+
+which produces:
+
+```text
+/efi/EFI/Linux/arch-linux.efi
+/efi/EFI/Linux/arch-linux-fallback.efi
+/efi/EFI/Linux/arch-linux-lts.efi
+/efi/EFI/Linux/arch-linux-lts-fallback.efi
+```
+
+After kernel-related upgrades, check the end of the `pacman -Syu` output for successful UKI generation. `bootctl list` can also be used to verify that both kernel families are still available.
+
+The LTS kernel is an independent kernel branch, but it is not a guarantee against every possible failure. It is primarily protection against regressions in the regular kernel. Problems in shared components such as systemd, mkinitcpio configuration, the EFI System Partition, LUKS or the filesystem can still affect both kernels.
+
 ## Audio
 
 ```bash
